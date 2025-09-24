@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Local Ollama Chat</title>
+  <style>
+    body { font-family: system-ui, Arial; margin: 24px; }
+    #chat { max-width: 820px; margin: auto; }
+    .msg { padding: 10px 14px; border-radius: 12px; margin: 8px 0; white-space: pre-wrap; }
+    .user { background: #eef; align-self: flex-end; }
+    .bot  { background: #f5f5f5; }
+    #list { display: flex; flex-direction: column; }
+    #box { width: 100%; padding: 10px; font-size: 16px; }
+    button { padding: 10px 16px; font-size: 15px; }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <h2>Chat with Ollama (local)</h2>
+    <div id="list"></div>
+    
+    <form id="form">
+      <textarea id="box" rows="3" placeholder="اكتب سؤالك هنا..."></textarea>
+      <div style="margin-top:8px">
+        <button type="submit">Send</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const list = document.getElementById('list');
+    const form = document.getElementById('form');
+    const box  = document.getElementById('box');
+
+    const history = []; // سنرسلها لـ /chat للحفاظ على سياق الحوار
+
+    function addMsg(text, cls) {
+      const d = document.createElement('div');
+      d.className = `msg ${cls}`;
+      d.textContent = text;
+      list.appendChild(d);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = box.value.trim();
+      if (!text) return;
+
+      addMsg(text, 'user');
+      history.push({ role: 'user', content: text });
+      box.value = '';
+
+      addMsg('…', 'bot'); // مؤقّت
+      try {
+        const r = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, history })
+        });
+        const data = await r.json();
+        list.lastChild.textContent = data.reply || '(no reply)';
+        history.push({ role: 'assistant', content: data.reply || '' });
+      } catch (err) {
+        list.lastChild.textContent = 'Error talking to API. Is Ollama running?';
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+from fastapi.responses import HTMLResponse
+from pathlib import Path
+BASE_DIR = Path(__file__).parent
+
+@app.get("/basic", response_class=HTMLResponse)
+def basic():
+    return (BASE_DIR / "basic.html").read_text(encoding="utf-8")
